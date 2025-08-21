@@ -1,6 +1,6 @@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import DataTable from '@/components/data-table';
 import * as React from 'react';
 import {
@@ -13,10 +13,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import FormInputGroup from '@/components/FormInputGroup';
-import { router } from '@inertiajs/react';
 import { Plus, Edit, Trash2, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { showSuccessAlert, showErrorAlert, showConfirmAlert } from '@/utils/sweetAlert';
+import { useRoleOperations } from '@/hooks/useRoleOperations';
 
 type Role = {
   id: number;
@@ -31,78 +30,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function Role({ roles = [] }: { roles?: Role[] }) {
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [editingId, setEditingId] = React.useState<number | null>(null);
-
-  const {
-    data,
-    setData,
-    post,
-    put,
-    processing,
-    reset,
-  } = useForm({
-    name: '',
-  });
+  const roleOperations = useRoleOperations();
 
 
-  const handleSave = () => {
-    if (editingId !== null) {
-      put(route('roles.update', editingId), {
-        onSuccess: () => {
-          router.visit(route('roles.index')); // Reload page to fetch fresh data
-          setIsDialogOpen(false);
-          reset();
-          setEditingId(null);
-          showSuccessAlert('Updated!', 'Role has been updated successfully.');
-        },
-        onError: () => {
-          showErrorAlert('Error!', 'Failed to update role. Please check your input and try again.');
-        }
-      });
-    } else {
-      post(route('roles.store'), {
-        onSuccess: () => {
-          router.visit(route('roles.index')); // Reload page to fetch fresh data
-          setIsDialogOpen(false);
-          reset();
-          showSuccessAlert('Created!', 'New role has been created successfully.');
-        },
-        onError: () => {
-          showErrorAlert('Error!', 'Failed to create role. Please check your input and try again.');
-        }
-      });
-    }
-  };
-
-  const handleEdit = (role: Role) => {
-    setData({
-      name: role.name,
-    });
-    setEditingId(role.id);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (role: Role) => {
-    const result = await showConfirmAlert(
-      'Delete Role',
-      `Are you sure you want to delete the role "${role.name}"? This action cannot be undone.`,
-      'Yes, delete it!',
-      {},
-      'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-    );
-
-    if (result.isConfirmed) {
-      router.delete(route('roles.destroy', role.id), {
-        onSuccess: () => {
-          showSuccessAlert('Deleted!', 'Role has been deleted successfully.');
-        },
-        onError: () => {
-          showErrorAlert('Error!', 'Failed to delete role. Please try again.');
-        }
-      });
-    }
-  };
 
   const columns = [
     {
@@ -127,7 +57,7 @@ export default function Role({ roles = [] }: { roles?: Role[] }) {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => handleEdit(role)}
+            onClick={() => roleOperations.handleEdit(role)}
             className="h-8 w-8 p-0"
           >
             <Edit className="w-4 h-4" />
@@ -135,7 +65,7 @@ export default function Role({ roles = [] }: { roles?: Role[] }) {
           <Button
             size="sm"
             variant="destructive"
-            onClick={() => handleDelete(role)}
+            onClick={() => roleOperations.handleDelete(role.id)}
             className="h-8 w-8 p-0"
           >
             <Trash2 className="w-4 h-4" />
@@ -165,11 +95,7 @@ export default function Role({ roles = [] }: { roles?: Role[] }) {
             emptyMessage="No roles found"
             actions={
               <Button
-                onClick={() => {
-                  reset();
-                  setEditingId(null);
-                  setIsDialogOpen(true);
-                }}
+                onClick={roleOperations.handleCreate}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -180,14 +106,14 @@ export default function Role({ roles = [] }: { roles?: Role[] }) {
         </motion.div>
 
         {/* Enhanced Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={roleOperations.isDialogOpen} onOpenChange={roleOperations.setIsDialogOpen}>
           <DialogContent size="md" className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
                 <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900 rounded-lg flex items-center justify-center">
                   <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                {editingId ? 'Edit Role' : 'Create New Role'}
+                {roleOperations.editingId ? 'Edit Role' : 'Create New Role'}
               </DialogTitle>
             </DialogHeader>
 
@@ -199,8 +125,8 @@ export default function Role({ roles = [] }: { roles?: Role[] }) {
                 type="text"
                 placeholder="e.g., Administrator, Manager, Support"
                 required
-                value={data.name}
-                onChange={(e) => setData('name', e.target.value)}
+                value={roleOperations.data.name}
+                onChange={(e) => roleOperations.setData('name', e.target.value)}
 
               />
             </div>
@@ -209,28 +135,24 @@ export default function Role({ roles = [] }: { roles?: Role[] }) {
               <DialogClose asChild>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    reset();
-                    setEditingId(null);
-                    setIsDialogOpen(false);
-                  }}
+                  onClick={roleOperations.handleCancel}
                   className="flex-1"
                 >
                   Cancel
                 </Button>
               </DialogClose>
               <Button
-                onClick={handleSave}
-                disabled={processing}
+                onClick={roleOperations.handleSave}
+                disabled={roleOperations.processing}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
               >
-                {processing ? (
+                {roleOperations.processing ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    {editingId ? 'Updating...' : 'Creating...'}
+                    {roleOperations.editingId ? 'Updating...' : 'Creating...'}
                   </div>
                 ) : (
-                  editingId ? 'Update Role' : 'Create Role'
+                  roleOperations.editingId ? 'Update Role' : 'Create Role'
                 )}
               </Button>
             </DialogFooter>

@@ -15,8 +15,9 @@ class Department extends Model
         return $this->hasMany(Employee::class);
     }
 
-    public function tickets() {
-        return $this->hasMany(Ticket::class);
-    }
+    // Removed tickets relationship - tickets table doesn't have department_id column
+    // public function tickets() {
+    //     return $this->hasMany(Ticket::class);
+    // }
 
 }

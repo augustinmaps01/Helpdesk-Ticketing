@@ -23,6 +23,9 @@ class Employee extends Model
     public function department () {
         return $this->belongsTo(Department::class);
     }
+    public function role () {
+        return $this->belongsTo(Roles::class);
+    }
     public function submittedTickets() {
         return $this->hasMany(Ticket::class, 'submitted_by');
     }

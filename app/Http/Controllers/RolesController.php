@@ -94,14 +94,31 @@ class RolesController extends Controller
     public function destroy(Roles $role)
     {
         try {
-            // Check if role has any associated users
-            if ($role->users()->count() > 0) {
-                return redirect()->back()->with('error', 'Cannot delete role with associated users.');
+            \Log::info("Attempting to delete role: {$role->name} (ID: {$role->id})");
+            
+            // Check if role has any associated employees
+            $employeeCount = $role->employees()->count();
+            if ($employeeCount > 0) {
+                \Log::warning("Cannot delete role '{$role->name}' - has {$employeeCount} associated employees");
+                if (request()->wantsJson()) {
+                    return response()->json(['error' => "Cannot delete role '{$role->name}' because it has {$employeeCount} associated employees."], 422);
+                }
+                return redirect()->back()->with('error', "Cannot delete role '{$role->name}' because it has {$employeeCount} associated employees.");
             }
             
             $role->delete();
+            \Log::info("Successfully deleted role: {$role->name}");
+            
+            if (request()->wantsJson()) {
+                return response()->json(['success' => 'Role deleted successfully.']);
+            }
             return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');
         } catch (\Exception $e) {
+            \Log::error('Role deletion failed: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            if (request()->wantsJson()) {
+                return response()->json(['error' => 'Failed to delete role: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()->with('error', 'Failed to delete role. Please try again.');
         }
     }

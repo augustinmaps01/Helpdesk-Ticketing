@@ -156,7 +156,7 @@ const getAdminNav = (userRole: string): NavItem[] => {
     },
     {
       title: 'Audit Trails',
-      href: '/audit-trail',
+      href: '/audit-trails',
       icon: FileClock,
     },
   ];

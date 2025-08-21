@@ -92,14 +92,12 @@ class DepartmentController extends Controller
     public function destroy(Department $department)
     {
         try {
-            // Check if department has any associated employees or tickets
+            // Check if department has any associated employees
             if ($department->employees()->count() > 0) {
                 return redirect()->back()->with('error', 'Cannot delete department with associated employees.');
             }
             
-            if ($department->tickets()->count() > 0) {
-                return redirect()->back()->with('error', 'Cannot delete department with associated tickets.');
-            }
+            // Note: Not checking tickets as the relationship doesn't exist in the current schema
             
             $department->delete();
             return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');

@@ -17,13 +17,8 @@ class AuthenticatedSessionController extends Controller
     /**
      * Show the login page.
      */
-    public function create(Request $request): Response|\Illuminate\Http\RedirectResponse
+    public function create(Request $request): Response
     {
-        // If user is already authenticated, redirect to dashboard
-        if (Auth::check()) {
-            return redirect()->route('dashboard');
-        }
-
         return Inertia::render('auth/login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => $request->session()->get('status'),
@@ -59,6 +54,9 @@ class AuthenticatedSessionController extends Controller
         // If authentication succeeds
         $request->session()->regenerate();
         
+        // Clear any logout flags from previous sessions
+        $request->session()->forget('logged_out_at');
+        
         // Get the authenticated user
         $user = Auth::user();
         
@@ -86,6 +84,9 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Mark session as logged out to prevent back navigation
+        $request->session()->put('logged_out_at', time());
+        
         // Clear any remember tokens
         if ($user = Auth::user()) {
             $user->remember_token = null;
@@ -106,18 +107,29 @@ class AuthenticatedSessionController extends Controller
         
         // Forget any session data that might be cached
         $request->session()->forget(['_token', '_previous', '_flash']);
+        
+        // Clear any cached authentication data
+        cache()->forget('user_' . ($user->id ?? 'unknown'));
 
-        // Create the redirect response
+        // Create the redirect response to login with complete cache clearing
         $response = redirect()->route('login');
 
-        // Set comprehensive no-cache headers
-        $response->headers->set('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate, private');
+        // Set the most comprehensive no-cache headers possible
+        $response->headers->set('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate, private, no-transform');
         $response->headers->set('Pragma', 'no-cache');
-        $response->headers->set('Expires', 'Sat, 01 Jan 1990 00:00:00 GMT');
-        $response->headers->set('Clear-Site-Data', '"cache", "cookies", "storage"');
+        $response->headers->set('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
+        $response->headers->set('Last-Modified', gmdate('D, d M Y H:i:s') . ' GMT');
+        $response->headers->set('Clear-Site-Data', '"cache", "cookies", "storage", "executionContexts"');
+        $response->headers->set('Vary', '*');
+        
+        // Additional security headers
+        $response->headers->set('X-Accel-Expires', '0');
+        $response->headers->set('Surrogate-Control', 'no-store');
         
         // Add success message for logout
         $response->with('status', 'You have been successfully logged out.');
+        $response->with('logout', true); // Flag to handle browser history on frontend
+        $response->with('clearCache', true); // Additional flag for frontend
 
         return $response;
     }

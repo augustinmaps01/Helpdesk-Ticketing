@@ -10,7 +10,7 @@ interface WelcomeAlertOptions {
 export const showWelcomeAlert = ({
     userName = 'User',
     message,
-    timer = 6000,
+    timer = 2000,
     showConfirmButton = true,
     position = 'top-end',
 }: WelcomeAlertOptions = {}, options: SweetAlertOptions = {}) => {

@@ -360,12 +360,6 @@ export default function Users({ users }: { users: User[] }) {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="hr">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-blue-500" />
-                        HR
-                      </div>
-                    </SelectItem>
                     <SelectItem value="admin">
                       <div className="flex items-center gap-2">
                         <Crown className="w-4 h-4 text-yellow-500" />

@@ -5,7 +5,7 @@ use App\Http\Controllers\Settings\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::middleware(['ensure.authenticated', 'verified', 'roles:admin,hr'])->group(function () {
+Route::middleware(['ensure.authenticated', 'verified', 'roles:admin'])->group(function () {
     Route::redirect('settings', '/settings/profile');
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');

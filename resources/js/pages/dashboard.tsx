@@ -3,6 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { motion } from 'framer-motion';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { Ticket as TicketIcon, Clock, CheckCircle, AlertTriangle, HeadphonesIcon, TrendingUp } from 'lucide-react';
 import { TicketStatusChart } from '@/components/ticket-status-chart';
 import { showWelcomeAlert } from '@/utils/sweetAlert';
@@ -44,6 +45,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 
 export default function Dashboard({ dashboardData, tickets, categories }: DashboardProps) {
+    // Guard this protected page
+    useAuthGuard();
+    
     const { props } = usePage<SharedData>();
     const { flash, auth } = props;
 
@@ -69,7 +73,7 @@ export default function Dashboard({ dashboardData, tickets, categories }: Dashbo
             showWelcomeAlert({
                 userName: auth.user?.name || 'User',
                 message: flash.welcome,
-                timer: 6000,
+                timer: 2000,
                 showConfirmButton: true,
                 position: 'top-end'
             }).then(() => {

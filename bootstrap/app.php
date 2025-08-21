@@ -3,6 +3,8 @@
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\EnsureAuthenticated;
+use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Http\Middleware\StrictAuthentication;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -27,6 +29,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register custom authentication middleware
         $middleware->alias([
             'ensure.authenticated' => EnsureAuthenticated::class,
+            'strict.auth' => StrictAuthentication::class,
+            'guest' => RedirectIfAuthenticated::class,
             'role' => \App\Http\Middleware\CheckRole::class,
             'roles' => \App\Http\Middleware\CheckMultipleRoles::class,
         ]);

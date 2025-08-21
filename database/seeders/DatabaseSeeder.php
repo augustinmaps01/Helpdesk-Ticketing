@@ -20,18 +20,11 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
         ]);
 
-        // Create HR User
-        User::factory()->create([
-            'name' => 'HR User',
-            'email' => 'hr@example.com',
-            'role' => 'hr',
-        ]);
-
-        // Create Test User (HR by default)
+        // Create Test User
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
-            'role' => 'hr',
+            'role' => 'admin',
         ]);
     }
 }

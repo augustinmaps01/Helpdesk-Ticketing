@@ -17,15 +17,17 @@ use App\Http\Controllers\LandingController;
 |--------------------------------------------------------------------------
 */
 
-// Public routes
-Route::get('/', [LandingController::class, 'index'])->name('landing.page');
+// Guest-only routes (redirect authenticated users to dashboard)
+Route::middleware('guest')->group(function () {
+    Route::get('/', [LandingController::class, 'index'])->name('landing.page');
+    
+    // Public ticket creation (only for non-authenticated users)
+    Route::get('/create-ticket', [TicketController::class, 'create'])->name('tickets.create');
+    Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+});
 
-// Public ticket creation
-Route::get('/create-ticket', [TicketController::class, 'create'])->name('tickets.create');
-Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
-
-// Authenticated routes
-Route::middleware(['auth', 'verified'])->group(function () {
+// Authenticated routes with strict authentication
+Route::middleware(['auth', 'verified', 'strict.auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

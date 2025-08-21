@@ -1,5 +1,5 @@
-import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { LoaderCircle, Eye, EyeOff, Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { FormEventHandler, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
@@ -11,7 +11,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/auth-layout';
-import AlertMessage from '@/components/AlertMessage'; // Import the AlertMessage component
 
 type LoginForm = {
     email: string;
@@ -27,8 +26,8 @@ interface LoginProps {
 export default function Login({ status, canResetPassword }: LoginProps) {
     // State to manage password visibility
     const [showPassword, setShowPassword] = useState(false);
-    // State to manage alert messages (success or error)
-    const [alertMessage, setAlertMessage] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    // State to manage display messages
+    const [displayMessage, setDisplayMessage] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: '',
@@ -36,57 +35,122 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         remember: false,
     });
 
-    // Effect to handle displaying alert messages based on Inertia's errors or status prop
+    // Get page props (including logout flag) at component level
+    const pageProps = usePage().props as any;
+
+    // Effect to handle displaying inline error messages
     useEffect(() => {
-        if (errors.email) {
-            setAlertMessage({ message: errors.email, type: 'error' });
-        } else if (errors.password) {
-            setAlertMessage({ message: errors.password, type: 'error' });
+        let timer: NodeJS.Timeout;
+
+        if (errors.email || errors.password) {
+            const errorMessage = errors.email || errors.password;
+            setDisplayMessage({ message: errorMessage, type: 'error' });
+            
+            // Auto-clear error messages after 3 seconds
+            timer = setTimeout(() => {
+                setDisplayMessage(null);
+            }, 3000);
         } else if (status) {
-            // Define known success messages. Any 'status' that is not a known success message
-            // will be treated as an error message for general authentication failures.
+            // Define known success messages
             const knownSuccessMessages = [
-                'You are logged in.', // Example success message
-                'Login successful.',  // Another example success message
-                // Add any other specific success messages your backend might return here
+                'You are logged in.',
+                'Login successful.',
+                'You have been successfully logged out.'
             ];
 
             if (knownSuccessMessages.includes(status)) {
-                setAlertMessage({ message: status, type: 'success' });
+                setDisplayMessage({ message: status, type: 'success' });
             } else {
-                // If status is present and not a known success message, treat it as an error.
-                // This will catch messages like "These credentials do not match our records."
-                setAlertMessage({ message: status, type: 'error' });
+                // Treat unknown status as error
+                setDisplayMessage({ message: status, type: 'error' });
             }
+            
+            // Auto-clear all status messages after 3 seconds
+            timer = setTimeout(() => {
+                setDisplayMessage(null);
+            }, 3000);
         } else {
-            // Clear alert message if no errors or status
-            setAlertMessage(null);
+            setDisplayMessage(null);
         }
 
-        // Optionally, clear the message after a few seconds
-        const timer = setTimeout(() => {
-            setAlertMessage(null);
-        }, 2000); // Message disappears after 5 seconds
+        // Cleanup timer on unmount or re-run
+        return () => {
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+    }, [errors.email, errors.password, status]);
 
-        return () => clearTimeout(timer); // Cleanup timer on unmount or re-run
-    }, [errors.email, errors.password, status]); // Dependencies for the effect
+    // Prevent browser back navigation to protected pages after logout
+    useEffect(() => {
+        // Check if user just logged out
+        if (pageProps.logout || pageProps.clearCache) {
+            // Clear all possible caches
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            
+            // Clear sessionStorage and localStorage
+            try {
+                sessionStorage.clear();
+                localStorage.removeItem('auth');
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+            } catch (e) {
+                // Ignore storage errors
+            }
+            
+            // Replace current history entry to prevent back navigation
+            window.history.replaceState(null, '', window.location.href);
+            
+            // Handle popstate event (back button)
+            const handlePopState = (event: PopStateEvent) => {
+                event.preventDefault();
+                window.history.replaceState(null, '', window.location.href);
+                // Force reload to ensure no cached content
+                window.location.reload();
+            };
+            
+            // Handle focus event (tab becomes active)
+            const handleFocus = () => {
+                // When tab becomes visible after logout, ensure we're on login page
+                if (window.location.pathname !== '/login') {
+                    window.location.href = '/login';
+                }
+            };
+            
+            window.addEventListener('popstate', handlePopState);
+            window.addEventListener('focus', handleFocus);
+            
+            // Cleanup
+            return () => {
+                window.removeEventListener('popstate', handlePopState);
+                window.removeEventListener('focus', handleFocus);
+            };
+        }
+    }, [pageProps.logout, pageProps.clearCache]);
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        // Clear any existing alerts before submission
-        setAlertMessage(null);
+        // Clear any existing messages before submission
+        setDisplayMessage(null);
         post(route('login'), {
-            // Modified onFinish to reset both email and password on error
+            onSuccess: () => {
+                // Login successful - Inertia will handle the redirect automatically
+                // Clear any form data
+                reset('email', 'password');
+            },
+            onError: () => {
+                // Login failed - reset form fields
+                reset('email', 'password');
+            },
             onFinish: () => {
-                // Always reset the password field
-                // The `reset` function can take multiple field names
-                // If there are errors (indicating a failed login attempt), reset both email and password
-                if (Object.keys(errors).length > 0) {
-                    reset('email', 'password'); // Resets both email and password to their initial empty states
-                } else {
-                    // If no errors, only reset password (for successful login, if desired)
-                    reset('email', 'password');
-                }
+                // This runs regardless of success or failure
+                // The form handling is already done in onSuccess/onError
             },
         });
     };
@@ -99,9 +163,25 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             descriptionClassName="text-sm text-muted-foreground">
             <Head title="Log in" />
 
-            {/* Use the new AlertMessage component */}
-            {alertMessage && (
-                <AlertMessage message={alertMessage.message} type={alertMessage.type} />
+            {/* Simple inline error/success display */}
+            {displayMessage && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className={`mb-4 p-4 rounded-md border flex items-center gap-3 ${
+                        displayMessage.type === 'error'
+                            ? 'bg-red-50 border-red-200 text-red-700'
+                            : 'bg-green-50 border-green-200 text-green-700'
+                    }`}
+                >
+                    {displayMessage.type === 'error' ? (
+                        <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                    ) : (
+                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    )}
+                    <span className="text-sm font-medium">{displayMessage.message}</span>
+                </motion.div>
             )}
 
             <motion.form

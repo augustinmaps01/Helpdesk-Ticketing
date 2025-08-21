@@ -9,11 +9,8 @@ import {
   Users,
   Settings,
   Star,
-  Monitor,
-  PanelLeftClose,
   PanelLeftOpen,
   Maximize2,
-  Minimize2,
   User,
 } from 'lucide-react';
 import { Link, usePage } from '@inertiajs/react';
@@ -31,18 +28,28 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import AppLogo from './app-logo';
-import { type NavItem } from '@/types';
+import { LucideIcon } from 'lucide-react';
+
+interface NavItem {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  badge?: string;
+}
 import { motion } from 'framer-motion';
 import { useState,  createContext, useContext } from 'react';
 
-// Context for sharing sidebar width and content expansion
-const SidebarWidthContext = createContext<{
+// Define context type
+interface SidebarWidthContextType {
   sidebarWidth: number;
-  setSidebarWidth: (width: number) => void;
+  setSidebarWidth: () => void;
   isContentExpanded: boolean;
   setIsContentExpanded: (expanded: boolean) => void;
   toggleContentExpansion: () => void;
-}>({
+}
+
+// Context for sharing sidebar width and content expansion
+const SidebarWidthContext = createContext<SidebarWidthContextType>({
   sidebarWidth: 320,
   setSidebarWidth: () => {},
   isContentExpanded: false,
@@ -50,16 +57,18 @@ const SidebarWidthContext = createContext<{
   toggleContentExpansion: () => {},
 });
 
-export const useSidebarWidth = () => useContext(SidebarWidthContext);
+export function useSidebarWidth() {
+  return useContext(SidebarWidthContext);
+}
 
 export function SidebarWidthProvider({ children }: { children: React.ReactNode }) {
   const [isContentExpanded, setIsContentExpanded] = useState(false);
-  
+
   // Dynamic sidebar width based on expansion state
   const sidebarWidth = isContentExpanded ? 64 : 320; // 4rem = 64px, 20rem = 320px
-  
-  const setSidebarWidth = (width: number) => {
-    // This function is kept for compatibility but doesn't do anything 
+
+  const setSidebarWidth = () => {
+    // This function is kept for compatibility but doesn't do anything
     // since width is now controlled by isContentExpanded
   };
 
@@ -68,12 +77,12 @@ export function SidebarWidthProvider({ children }: { children: React.ReactNode }
   };
 
   return (
-    <SidebarWidthContext.Provider value={{ 
-      sidebarWidth, 
-      setSidebarWidth, 
-      isContentExpanded, 
-      setIsContentExpanded, 
-      toggleContentExpansion 
+    <SidebarWidthContext.Provider value={{
+      sidebarWidth,
+      setSidebarWidth,
+      isContentExpanded,
+      setIsContentExpanded,
+      toggleContentExpansion
     }}>
       {children}
     </SidebarWidthContext.Provider>
@@ -89,26 +98,17 @@ const generalNav: NavItem[] = [
 ];
 
 // Define navigation based on role
-const getTicketingNav = (userRole: string): NavItem[] => {
-  const baseNav = [
-    {
-      title: 'Tickets',
-      href: '/tickets',
-      icon: Ticket,
-      badge: '12'
-    },
-  ];
+const getTicketingNav = (): NavItem[] => {
+    const baseNav = [
+        {
+            title: 'Tickets',
+            href: '/tickets',
+            icon: Ticket,
+            badge: '12'
+        },
+    ];
 
-  // Add HR-specific navigation
-  if (userRole === 'hr') {
-    baseNav.push({
-      title: 'Ticket Monitor',
-      href: '/hr/tickets',
-      icon: Monitor,
-    });
-  }
-
-  return baseNav;
+    return baseNav;
 };
 
 // Define master data navigation based on role
@@ -162,8 +162,8 @@ const getAdminNav = (userRole: string): NavItem[] => {
   ];
 };
 
-// Define system navigation based on role
-const getSystemNav = (userRole: string): NavItem[] => {
+// Define system navigation
+const getSystemNav = (): NavItem[] => {
   return [
     {
       title: 'Settings',
@@ -179,10 +179,10 @@ export function AppSidebar() {
   const { isContentExpanded, toggleContentExpansion } = useSidebarWidth();
 
   // Get navigation items based on user role
-  const ticketingNav = getTicketingNav(userRole);
+  const ticketingNav = getTicketingNav();
   const masterDataNav = getMasterDataNav(userRole);
   const adminNav = getAdminNav(userRole);
-  const systemNav = getSystemNav(userRole);
+  const systemNav = getSystemNav();
 
   return (
     <div className="relative flex overflow-hidden">
@@ -191,10 +191,10 @@ export function AppSidebar() {
         variant="inset"
         className={`bg-gradient-to-b from-slate-50 via-white to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 border-r border-slate-200/60 dark:border-slate-800/60 transition-all duration-500 ease-out overflow-hidden h-screen shadow-xl dark:shadow-black/20`}
         style={{
-          width: isContentExpanded ? '4.5rem' : '21rem',
-          '--sidebar-width': isContentExpanded ? '4.5rem' : '21rem',
-          maxWidth: isContentExpanded ? '4.5rem' : '21rem',
-          minWidth: isContentExpanded ? '4.5rem' : '21rem'
+          width: isContentExpanded ? '4.5rem' : '20rem',
+          '--sidebar-width': isContentExpanded ? '4.5rem' : '20rem',
+          maxWidth: isContentExpanded ? '4.5rem' : '20rem',
+          minWidth: isContentExpanded ? '4.5rem' : '20rem'
         } as React.CSSProperties}
       >
       <SidebarHeader className="border-b border-slate-200/50 dark:border-slate-800/50 bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950/50 overflow-hidden backdrop-blur-sm">
@@ -227,9 +227,9 @@ export function AppSidebar() {
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
                   className="flex-1"
                 >
-                  <SidebarMenuButton 
-                    size="lg" 
-                    asChild 
+                  <SidebarMenuButton
+                    size="lg"
+                    asChild
                     className="hover:bg-gradient-to-r hover:from-white/70 hover:to-indigo-50/70 dark:hover:from-slate-800/70 dark:hover:to-indigo-900/30 transition-all duration-300 rounded-xl border border-transparent hover:border-indigo-200/50 dark:hover:border-indigo-800/50 shadow-sm hover:shadow-md"
                   >
                     <Link href="/dashboard" prefetch className="group">
@@ -242,7 +242,7 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </motion.div>
-                
+
                 {/* Content Expansion Toggle */}
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: -5 }}
@@ -329,8 +329,8 @@ export function AppSidebar() {
                   key={item.title}
                   initial={{ opacity: 0, scale: 0.5, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.4, 
+                  transition={{
+                    duration: 0.4,
                     delay: index * 0.1,
                     type: "spring",
                     stiffness: 300,
@@ -357,8 +357,8 @@ export function AppSidebar() {
                   key={item.title}
                   initial={{ opacity: 0, scale: 0.5, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.4, 
+                  transition={{
+                    duration: 0.4,
                     delay: (index + generalNav.length) * 0.1,
                     type: "spring",
                     stiffness: 300,
@@ -395,8 +395,8 @@ export function AppSidebar() {
                   key={item.title}
                   initial={{ opacity: 0, scale: 0.5, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.4, 
+                  transition={{
+                    duration: 0.4,
                     delay: (index + generalNav.length + ticketingNav.length) * 0.1,
                     type: "spring",
                     stiffness: 300,
@@ -423,8 +423,8 @@ export function AppSidebar() {
                   key={item.title}
                   initial={{ opacity: 0, scale: 0.5, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.4, 
+                  transition={{
+                    duration: 0.4,
                     delay: (index + generalNav.length + ticketingNav.length + masterDataNav.length) * 0.1,
                     type: "spring",
                     stiffness: 300,
@@ -451,8 +451,8 @@ export function AppSidebar() {
                   key={item.title}
                   initial={{ opacity: 0, scale: 0.5, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.4, 
+                  transition={{
+                    duration: 0.4,
                     delay: (index + generalNav.length + ticketingNav.length + masterDataNav.length + adminNav.length) * 0.1,
                     type: "spring",
                     stiffness: 300,
@@ -494,7 +494,7 @@ export function AppSidebar() {
             <motion.div
               initial={{ opacity: 0, scale: 0.5, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ 
+              transition={{
                 duration: 0.4,
                 type: "spring",
                 stiffness: 300,

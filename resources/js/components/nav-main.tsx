@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
+import React from 'react';
 import { motion } from 'framer-motion';
 
 export function NavMain({
@@ -66,7 +67,7 @@ export function NavMain({
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 group-hover:bg-blue-100 group-hover:text-blue-600'
                         }
                       `}>
-                        <item.icon className="size-4" />
+                        {item.icon && React.createElement(item.icon as React.ComponentType<{className?: string}>, { className: "size-4" })}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">

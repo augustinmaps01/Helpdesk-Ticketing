@@ -18,7 +18,7 @@ export interface NavGroup {
 export interface NavItem {
     title: string;
     href: string;
-    icon?: LucideIcon | null;
+    icon?: LucideIcon;
     isActive?: boolean;
     description?: string;
     badge?: string;
@@ -46,7 +46,7 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    role: 'admin' | 'hr';
+    role: 'admin';
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;

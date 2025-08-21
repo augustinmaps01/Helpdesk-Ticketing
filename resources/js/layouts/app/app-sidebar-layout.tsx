@@ -4,8 +4,12 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { type BreadcrumbItem } from '@/types';
 import { type PropsWithChildren } from 'react';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 
 export default function AppSidebarLayout({ children, breadcrumbs = [] }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
+    // Guard all pages using this layout
+    useAuthGuard();
+    
     return (
         <AppShell variant="sidebar">
             <AppSidebar />

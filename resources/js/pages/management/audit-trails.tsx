@@ -34,7 +34,7 @@ const mockAuditLogs = [
         changes: {
             name: { old: null, new: 'Jane Smith' },
             email: { old: null, new: 'jane@example.com' },
-            role: { old: null, new: 'hr' }
+            role: { old: null, new: 'admin' }
         }
     },
     {
@@ -44,13 +44,13 @@ const mockAuditLogs = [
         entity_id: '12',
         user: 'Admin User',
         user_id: 1,
-        details: 'Updated user role from HR to Admin for John Doe',
+        details: 'Updated user role to Admin for John Doe',
         ip_address: '192.168.1.100',
         user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         severity: 'warning',
         timestamp: '2025-08-17 13:15:10',
         changes: {
-            role: { old: 'hr', new: 'admin' }
+            role: { old: 'user', new: 'admin' }
         }
     },
     {
